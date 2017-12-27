@@ -18,7 +18,6 @@ class Node(object):
 
 class AStar(object):
     def __init__(self):
-        print 'hello'
         self.open = []
         heapq.heapify(self.open)
         self.closed = set()
@@ -33,21 +32,19 @@ class AStar(object):
         for x in range(self.grid_width):
             for y in range(self.grid_height):
                 if (x, y) in obstacles:
-                    obstacle = False
-                else:
                     obstacle = True
+                else:
+                    obstacle = False
                 self.nodes.append(Node(x, y, obstacle))
 
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
-
 
     def heuristic(self, current, target):
         return sqrt((current.x-target.x)**2 + (current.y-target.y)**2)
 
     def heuristic2(self, cell):
         return 10 * (abs(cell.x - self.end.x) + abs(cell.y - self.end.y))
-
 
     def get_node(self, x, y):
         return self.nodes[x * self.grid_height + y] # they're linear indexed
@@ -80,7 +77,7 @@ class AStar(object):
 
     def update_node(self, nextNode, node):
         # updates the next node
-        nextNode.g = node.g + 10#node.g + 10 #self.heuristic(nextNode, self.start)
+        nextNode.g = node.g + 10 #self.heuristic(nextNode, self.start)
         nextNode.h = self.heuristic2(nextNode) #self.heuristic2(nextNode) #self.heuristic(nextNode, self.end)
         nextNode.f = nextNode.g + nextNode.h
         nextNode.parent = node
@@ -96,7 +93,7 @@ class AStar(object):
 
             neighbours = self.get_neighbours(node) # grab the neighbours
             for neighbour in neighbours:
-                if neighbour.obstacle and neighbour not in self.closed:
+                if ~neighbour.obstacle and neighbour not in self.closed:
                     if (neighbour.f, neighbour) in self.open:
                     # if neighbour is in open list, check if current path is better than the one previously found for this neighbour
                         if neighbour.g > node.g + 10: # previously: > node.g + 10
@@ -107,12 +104,10 @@ class AStar(object):
 
 
 if __name__ == '__main__':
-    # obstacles = ((0, 5), (1, 0), (1, 1), (1, 5), (2, 3),
-    #  (3, 1), (3, 2), (3, 5), (4, 1), (4, 4), (5, 1))
 # configs
-    width = 100
-    height = 100
-    obstaclePercentage = 1
+    width = 200
+    height = 200
+    obstaclePercentage = 2
 
 # generate the obstacles
     obstacles = np.round(np.random.rand(width*obstaclePercentage,2) * width)
@@ -132,7 +127,6 @@ if __name__ == '__main__':
 
 # plot results
     x, y = zip(*result)
-
     plt.plot(x,y, 'gd')
     plt.show()
 
