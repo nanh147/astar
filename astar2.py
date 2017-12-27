@@ -40,17 +40,16 @@ class AStar(object):
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
 
-    def heuristic(self, current, target):
+    def heuristic(self, current, target): # pythag distance
         return sqrt((current.x-target.x)**2 + (current.y-target.y)**2)
 
-    def heuristic2(self, cell):
+    def heuristic2(self, cell): # original heuristic used in the example
         return 10 * (abs(cell.x - self.end.x) + abs(cell.y - self.end.y))
 
     def get_node(self, x, y):
         return self.nodes[x * self.grid_height + y] # they're linear indexed
 
     def get_neighbours(self, node):
-        # CW from right
         neighbours = []
         if node.x < self.grid_width - 1:
             neighbours.append(self.get_node(node.x + 1, node.y))
@@ -97,7 +96,7 @@ class AStar(object):
             f, node = heapq.heappop(self.open) # pop node from queue
             self.closed.add(node) # add to closed
 
-            if node is self.end:
+            if node is self.end: # finished, find the path
                 return self.show_path()
 
             neighbours = self.get_neighbours(node) # grab the neighbours
@@ -129,7 +128,6 @@ if __name__ == '__main__':
 
     obstacles = obstacles.astype(int)
     obstacles = tuple(map(tuple, obstacles))
-
 
 # plot the obstacles
     xobs, yobs = zip(*obstacles)
