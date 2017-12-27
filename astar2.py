@@ -24,6 +24,7 @@ class AStar(object):
         self.nodes = []
         self.grid_height = None
         self.grid_width = None
+        self.heuristic_type = 2 # 1 = pythagoras, 2 = add 10 thing
 
     def init_grid(self, start, end, obstacles, width, height):
         self.grid_width = width
@@ -85,8 +86,14 @@ class AStar(object):
 
     def update_node(self, nextNode, node):
         # updates the next node
-        nextNode.g = node.g + 10 #self.heuristic(nextNode, self.start)
-        nextNode.h = self.heuristic2(nextNode) #self.heuristic2(nextNode) #self.heuristic(nextNode, self.end)
+        if self.heuristic_type is 1: # pythagoras
+            nextNode.g = self.heuristic(nextNode, self.start)
+            nextNode.h = self.heuristic(nextNode, self.end)
+
+        elif self.heuristic_type is 2:
+            nextNode.g = node.g + 10 # add 10
+            nextNode.h = self.heuristic2(nextNode)  # self.heuristic2(nextNode) #self.heuristic(nextNode, self.end)
+
         nextNode.f = nextNode.g + nextNode.h
         nextNode.parent = node
 
@@ -99,13 +106,18 @@ class AStar(object):
             if node is self.end: # finished, find the path
                 return self.show_path()
 
-            neighbours = self.get_neighbours(node) # grab the neighbours
+            neighbours = self.get_neighbours(node) # grab current node's neighbours
             for neighbour in neighbours:
                 if not neighbour.obstacle and neighbour not in self.closed:
                     if (neighbour.f, neighbour) in self.open:
-                    # if neighbour is in open list, check if current path is better than the one previously found for this neighbour
-                        if neighbour.g > node.g + 10: # previously: > node.g + 10
-                            self.update_node(neighbour, node)
+
+                        # of the neighbours, select one with the optimal heuristic depending on which heuristic is being used
+                        if self.heuristic_type is 1:
+                            if neighbour.h < node.h:
+                                self.update_node(neighbour, node)
+                        elif self.heuristic_type is 2:                     # if neighbour is in open list, check if current path is better than the one previously found for this neighbour
+                            if neighbour.g > node.g + 10:
+                                self.update_node(neighbour, node)
                     else:
                         self.update_node(neighbour, node)
                         heapq.heappush(self.open, (neighbour.f, neighbour))
@@ -122,7 +134,7 @@ def genObstacles(num_obstacles, width, circle = 1):
         obstacle_locs = np.round(np.random.rand(num_obstacles, 2) * width)
         obstacles = np.empty([1, 2])
         for row in obstacle_locs:
-            obstacles = np.vstack((obstacles, gencircle(10, row[0], row[1])))
+            obstacles = np.vstack((obstacles, gencircle(50, row[0], row[1])))
 
         obstacles = obstacles.astype(int)
         return tuple(map(tuple, obstacles)) # convert to tuple
@@ -130,9 +142,9 @@ def genObstacles(num_obstacles, width, circle = 1):
 
 if __name__ == '__main__':
 # configs
-    width = 100
-    height = 100
-    num_obstacles = 3
+    width = 500
+    height = 500
+    num_obstacles = 10
     circular_obstacles = True # False: randomly placed point obstacles
 
     obstacles = genObstacles(num_obstacles,width,circular_obstacles)
@@ -146,7 +158,7 @@ if __name__ == '__main__':
 # run the algorithm
     print 'Algorithm'
     astar = AStar()
-    astar.init_grid([0,0],[width - 1,height - 1], obstacles, width, height)
+    astar.init_grid([0,0], [width - 1,height - 1], obstacles, width, height)
     print 'Process start'
     result = astar.process()
 
