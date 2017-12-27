@@ -2,7 +2,6 @@ from math import sqrt
 import matplotlib.pyplot as plt
 import heapq
 from gencircle import *
-import random
 import numpy as np
 
 # adapted from: https://www.laurentluce.com/posts/solving-mazes-using-python-simple-recursivity-and-a-search/
