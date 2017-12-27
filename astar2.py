@@ -61,6 +61,15 @@ class AStar(object):
             neighbours.append(self.get_node(node.x - 1, node.y))
         if node. y < self.grid_height - 1:
             neighbours.append(self.get_node(node.x, node.y + 1))
+        if node.y > 0 and node.y < self.grid_height -1 and node.x < self.grid_width-1: # up, right
+            neighbours.append(self.get_node(node.x + 1, node.y + 1))
+        if node.y > 0 and node.y < self.grid_height -1 and node.x > 0: # up, left
+            neighbours.append(self.get_node(node.x - 1, node.y + 1))
+        if node.y > 1 and node.y < self.grid_height and node.x < self.grid_width -1: # down, right # check if I can extend grid height by 1
+            neighbours.append(self.get_node(node.x + 1, node.y - 1))
+        if node.y > 1 and node.y < self.grid_height and node.x > 0: # down, left
+            neighbours.append(self.get_node(node.x - 1, node.y - 1))
+
         return neighbours
 
     def show_path(self):
