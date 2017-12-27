@@ -1,6 +1,8 @@
 from math import sqrt
 import matplotlib.pyplot as plt
 import heapq
+import random
+import numpy as np
 
 # adapted from: https://www.laurentluce.com/posts/solving-mazes-using-python-simple-recursivity-and-a-search/
 
@@ -21,10 +23,13 @@ class AStar(object):
         heapq.heapify(self.open)
         self.closed = set()
         self.nodes = []
-        self.grid_height = 6;
-        self.grid_width = 6;
+        self.grid_height = None
+        self.grid_width = None
 
-    def init_grid(self, start, end, obstacles):
+    def init_grid(self, start, end, obstacles, width, height):
+        self.grid_width = width
+        self.grid_height = height
+
         for x in range(self.grid_width):
             for y in range(self.grid_height):
                 if (x, y) in obstacles:
@@ -35,6 +40,7 @@ class AStar(object):
 
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
+
 
     def heuristic(self, current, target):
         return sqrt((current.x-target.x)**2 + (current.y-target.y)**2)
@@ -101,29 +107,36 @@ class AStar(object):
 
 
 if __name__ == '__main__':
-    print 'suh'
-    # x = [1,2,3,4]
-    # y = [23,21,5,6]
-    # plt.plot(x,y)
-    # plt.axis([0, 20, 0, 30])
-    # plt.show()
-    obstacles = ((0, 5), (1, 0), (1, 1), (1, 5), (2, 3),
-     (3, 1), (3, 2), (3, 5), (4, 1), (4, 4), (5, 1))
+    # obstacles = ((0, 5), (1, 0), (1, 1), (1, 5), (2, 3),
+    #  (3, 1), (3, 2), (3, 5), (4, 1), (4, 4), (5, 1))
+# configs
+    width = 100
+    height = 100
+    obstaclePercentage = 1
 
+# generate the obstacles
+    obstacles = np.round(np.random.rand(width*obstaclePercentage,2) * width)
+    obstacles = obstacles.astype(int)
+    obstacles = tuple(map(tuple, obstacles))
 
+# plot the obstacles
+    xobs, yobs = zip(*obstacles)
+    plt.axis([-1, width, -1, height])
+    plt.plot(xobs, yobs, 'kx')
+    plt.grid()
+
+# run the algorithm
     astar = AStar()
-    astar.init_grid([0,0],[5,5], obstacles)
+    astar.init_grid([0,0],[width - 1,height - 1], obstacles, width, height)
     result = astar.process()
 
+# plot results
     x, y = zip(*result)
-    xobs, yobs = zip(*obstacles)
 
-    plt.axis([-1, 10, -1, 10])
     plt.plot(x,y, 'gd')
-    plt.plot(xobs, yobs, 'kx')
-
-
     plt.show()
+
+
 
 
 
