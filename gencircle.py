@@ -37,7 +37,7 @@ def gencircle(radius, x0, y0):
     uniques = np.vstack({tuple(row) for row in c}) # the unique points
     extrapts = ([0,0]) # to contain
 
-# fill in the circles
+# fill in the circles. Note: we don't actually need to do this for the algorithm to work.
     for row in uniques: # find the max and min y values for each x. Create the intermediate y's at each x to fill in the circle
         miny = c[c[:,0] == row[0], 1].min() # logical indexing
         maxy = c[c[:,0] == row[0], 1].max()
@@ -49,4 +49,6 @@ def gencircle(radius, x0, y0):
         extrapts = np.vstack((extrapts,np.column_stack((tempx, tempy)))) # https://stackoverflow.com/questions/14741061/concatenating-column-vectors-using-numpy-arrays
 
     extrapts = np.delete(extrapts,0,axis = 0) # delete the initial row of zeros used in construction
-    return np.vstack((c,extrapts)) # stack  fill in points onto the original outline points
+
+    # return np.vstack((c,extrapts)) # stack  fill in points onto the original outline points
+    return c

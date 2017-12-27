@@ -110,24 +110,32 @@ class AStar(object):
                         self.update_node(neighbour, node)
                         heapq.heappush(self.open, (neighbour.f, neighbour))
 
+def genObstacles(num_obstacles, width, circle = 1):
+    # randomly distributed point obstacles
+    if not circle:
+        obstacles = np.round(np.random.rand(width*num_obstacles,2) * width)
+        obstacles = obstacles.astype(int)
+        return tuple(map(tuple, obstacles))
+
+    # randomly placed circular objects
+    else:
+        obstacle_locs = np.round(np.random.rand(num_obstacles, 2) * width)
+        obstacles = np.empty([1, 2])
+        for row in obstacle_locs:
+            obstacles = np.vstack((obstacles, gencircle(10, row[0], row[1])))
+
+        obstacles = obstacles.astype(int)
+        return tuple(map(tuple, obstacles)) # convert to tuple
+
 
 if __name__ == '__main__':
 # configs
-    width = 70
-    height = 70
-    num_obstacles = 2
+    width = 100
+    height = 100
+    num_obstacles = 3
+    circular_obstacles = True # False: randomly placed point obstacles
 
-# generate the obstacles
-#     obstacles = np.round(np.random.rand(width*obstaclePercentage,2) * width)
-#     obstacles = obstacles.astype(int)
-#     obstacles = tuple(map(tuple, obstacles))
-    obstacle_locs = np.round(np.random.rand(num_obstacles,2) * width)
-    obstacles = np.empty([1,2])
-    for row in obstacle_locs:
-        obstacles = np.vstack((obstacles,gencircle(10,row[0],row[1])))
-
-    obstacles = obstacles.astype(int)
-    obstacles = tuple(map(tuple, obstacles))
+    obstacles = genObstacles(num_obstacles,width,circular_obstacles)
 
 # plot the obstacles
     xobs, yobs = zip(*obstacles)
@@ -136,13 +144,15 @@ if __name__ == '__main__':
     plt.grid()
 
 # run the algorithm
+    print 'Algorithm'
     astar = AStar()
     astar.init_grid([0,0],[width - 1,height - 1], obstacles, width, height)
+    print 'Process start'
     result = astar.process()
 
 # plot results
     x, y = zip(*result)
-    plt.plot(x,y, 'gd')
+    plt.plot(x,y, '-gd')
     plt.show()
 
 
