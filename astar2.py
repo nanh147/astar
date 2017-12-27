@@ -123,7 +123,6 @@ if __name__ == '__main__':
 #     obstacles = obstacles.astype(int)
 #     obstacles = tuple(map(tuple, obstacles))
     obstacle_locs = np.round(np.random.rand(num_obstacles,2) * width)
-    # obstacles = gencircle(15, 25,25)
     obstacles = np.empty([1,2])
     for row in obstacle_locs:
         obstacles = np.vstack((obstacles,gencircle(10,row[0],row[1])))
