@@ -115,16 +115,23 @@ class AStar(object):
 
 if __name__ == '__main__':
 # configs
-    width = 50
-    height = 50
-    obstaclePercentage = 2
+    width = 70
+    height = 70
+    num_obstacles = 2
 
 # generate the obstacles
 #     obstacles = np.round(np.random.rand(width*obstaclePercentage,2) * width)
 #     obstacles = obstacles.astype(int)
 #     obstacles = tuple(map(tuple, obstacles))
-    obstacles = gencircle(10, 9,10)
+    obstacle_locs = np.round(np.random.rand(num_obstacles,2) * width)
+    # obstacles = gencircle(15, 25,25)
+    obstacles = np.empty([1,2])
+    for row in obstacle_locs:
+        obstacles = np.vstack((obstacles,gencircle(10,row[0],row[1])))
+
+    obstacles = obstacles.astype(int)
     obstacles = tuple(map(tuple, obstacles))
+
 
 # plot the obstacles
     xobs, yobs = zip(*obstacles)
