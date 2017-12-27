@@ -1,6 +1,7 @@
 from math import sqrt
 import matplotlib.pyplot as plt
 import heapq
+from gencircle import *
 import random
 import numpy as np
 
@@ -93,7 +94,7 @@ class AStar(object):
 
             neighbours = self.get_neighbours(node) # grab the neighbours
             for neighbour in neighbours:
-                if ~neighbour.obstacle and neighbour not in self.closed:
+                if not neighbour.obstacle and neighbour not in self.closed:
                     if (neighbour.f, neighbour) in self.open:
                     # if neighbour is in open list, check if current path is better than the one previously found for this neighbour
                         if neighbour.g > node.g + 10: # previously: > node.g + 10
@@ -105,13 +106,15 @@ class AStar(object):
 
 if __name__ == '__main__':
 # configs
-    width = 200
-    height = 200
+    width = 50
+    height = 50
     obstaclePercentage = 2
 
 # generate the obstacles
-    obstacles = np.round(np.random.rand(width*obstaclePercentage,2) * width)
-    obstacles = obstacles.astype(int)
+#     obstacles = np.round(np.random.rand(width*obstaclePercentage,2) * width)
+#     obstacles = obstacles.astype(int)
+#     obstacles = tuple(map(tuple, obstacles))
+    obstacles = gencircle(10, 9,10)
     obstacles = tuple(map(tuple, obstacles))
 
 # plot the obstacles
