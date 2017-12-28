@@ -3,7 +3,6 @@ import matplotlib.pyplot as plt
 import heapq
 from gencircle import *
 import numpy as np
-import timeit
 # adapted from: https://www.laurentluce.com/posts/solving-mazes-using-python-simple-recursivity-and-a-search/
 
 class Node(object):
@@ -54,8 +53,6 @@ class AStar(object):
 
         self.nodes.sort(key=lambda x: x.y)
         self.nodes.sort(key=lambda x: x.x)
-
-        # self.nodes= tuple(self.nodes(tuple, obstacles)) # convert to tuple
 
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
@@ -153,17 +150,12 @@ class AStar(object):
                         self.update_node(neighbour, node)
                         heapq.heappush(self.open, (neighbour.f, neighbour))
         print 'died'
+
 def genObstacles(num_obstacles, width, height, circle = 1):
     # randomly distributed point obstacles
     if not circle:
         obstacles = np.round(np.random.rand(num_obstacles,2) * [width, height])
-        obstacles = obstacles.astype(int)
-
-        # remove out of range obstacles
-        obstacles = obstacles[obstacles[:,0] >= 0] # x GTE 0
-        obstacles = obstacles[obstacles[:,0] < width] # x LT width
-        obstacles = obstacles[obstacles[:,1] >= 0] # y GTE 0
-        obstacles = obstacles[obstacles[:,1] < height] # y LT height
+        obstacles = checkObstacles(obstacles, width, height)
         return tuple(map(tuple, obstacles))
 
     # randomly placed circular objects
@@ -173,24 +165,30 @@ def genObstacles(num_obstacles, width, height, circle = 1):
         for row in obstacle_locs:
             obstacles = np.vstack((obstacles, gencircle(10, row[0], row[1])))
 
-        # strip out obstacles that are out of range
-        obstacles = obstacles[obstacles[:,0] >= 0] # x GTE 0
-        obstacles = obstacles[obstacles[:,0] < width] # x LT width
-        obstacles = obstacles[obstacles[:,1] >= 0] # y GTE 0
-        obstacles = obstacles[obstacles[:,1] < height] # y LT height
-
-        obstacles = np.unique(obstacles, axis = 0)
-
-        obstacles = obstacles.astype(int)
+        obstacles = checkObstacles(obstacles, width, height)
         return tuple(map(tuple, obstacles)) # convert to tuple
+
+def checkObstacles(obstacles, width, height):
+    # the obstacle matrix must be unique integers that are within the map. This function ensures that
+    # strip out obstacles that are out of range
+    obstacles = obstacles.astype(int)
+    obstacles = obstacles[obstacles[:, 0] >= 0]  # x GTE 0
+    obstacles = obstacles[obstacles[:, 0] < width]  # x LT width
+    obstacles = obstacles[obstacles[:, 1] >= 0]  # y GTE 0
+    obstacles = obstacles[obstacles[:, 1] < height]  # y LT height
+
+    obstacles = np.unique(obstacles,
+                          axis=0)  # must remove duplicate obstacles too or they'll be added to the list of locations :(
+
+    return obstacles
 
 
 if __name__ == '__main__':
 # configs
     width = 100
-    height = 200
-    num_obstacles = 200
-    circular_obstacles = False # False: randomly placed point obstacles
+    height = 100
+    num_obstacles = 5
+    circular_obstacles = True # False: randomly placed point obstacles
 
     obstacles = genObstacles(num_obstacles,width,height,circular_obstacles)
 
@@ -201,17 +199,10 @@ if __name__ == '__main__':
     plt.grid()
 
 # run the algorithm
-    print 'Algorithm'
     astar = AStar()
 
-    start_time = timeit.default_timer()
-
     astar.init_grid2([0,0], [width - 1,height - 1], obstacles, width, height)
-    elapsed = timeit.default_timer() - start_time
-    print elapsed
 
-
-    print 'Process start'
     result = astar.process()
 
 # plot results
