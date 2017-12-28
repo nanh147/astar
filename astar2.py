@@ -201,7 +201,7 @@ if __name__ == '__main__':
 # run the algorithm
     astar = AStar()
 
-    astar.init_grid2([0,0], [width - 1,height - 1], obstacles, width, height)
+    astar.init_grid([0,0], [width - 1,height - 1], obstacles, width, height)
 
     result = astar.process()
 
