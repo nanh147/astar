@@ -36,7 +36,7 @@ def gencircle(radius, x0, y0):
 
     c = np.asarray(c) # convert to numpy
     uniques = np.vstack({tuple(row) for row in c}) # the unique points
-    extrapts = ([0,0]) # to contain
+    extrapts = np.empty([1,2])
 
 # fill in the circles
     for row in uniques: # find the max and min y values for each x. Create the intermediate y's at each x to fill in the circle
@@ -49,7 +49,7 @@ def gencircle(radius, x0, y0):
         # horzcat the tempx and tempy, then stack that onto existing final
         extrapts = np.vstack((extrapts,np.column_stack((tempx, tempy)))) # https://stackoverflow.com/questions/14741061/concatenating-column-vectors-using-numpy-arrays
 
-    extrapts = np.delete(extrapts,0,axis = 0) # delete the initial row of zeros used in construction
+    # extrapts = np.delete(extrapts,0,axis = 0) # delete the initial row of zeros used in construction
     return np.vstack((c,extrapts)) # stack  fill in points onto the original outline points
 
 
