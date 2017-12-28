@@ -30,7 +30,7 @@ def genPoints(width, height, obstacles):
 
     return positions
 
-genpoints()
+genPoints(200, 200, obstacles)
 
 # positions[[positions[:,0:1] == obstacles[:,0:1]],2] = 1
 

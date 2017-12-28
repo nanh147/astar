@@ -52,19 +52,22 @@ class AStar(object):
         for row in obstacles:
             self.nodes.append(Node(row[0], row[1], 1))
 
+        self.nodes.sort(key=lambda x: x.y)
+        self.nodes.sort(key=lambda x: x.x)
+
+        # self.nodes= tuple(self.nodes(tuple, obstacles)) # convert to tuple
+
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
 
 
     def genPoints(self,width, height, obstacles):
         x, y = np.mgrid[0:width, 0:height]
-        positions = np.column_stack([x.ravel(),
-                                     y.ravel()])  # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
+        positions = np.column_stack([x.ravel(),y.ravel()])  # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
 
         for row in obstacles:
             admissable = np.not_equal(positions, row)
-            admissable = np.logical_or(admissable[:, 0], admissable[:,
-                                                         1])  # required because not_equal does element wise, not row wise. Blocks off rows that entirely match obstacle
+            admissable = np.logical_or(admissable[:, 0], admissable[:,1])  # required because not_equal does element wise, not row wise. Blocks off rows that entirely match obstacle
             positions = positions[admissable]
 
         return positions
@@ -106,7 +109,7 @@ class AStar(object):
         while node.parent is not self.start:
             node = node.parent
             path.append((node.x, node.y))
-            print node.x, node.y
+            # print node.x, node.y
 
         path.append((self.start.x, self.start.y))
         path.reverse()
@@ -149,12 +152,18 @@ class AStar(object):
                     else:
                         self.update_node(neighbour, node)
                         heapq.heappush(self.open, (neighbour.f, neighbour))
-
-def genObstacles(num_obstacles, width, circle = 1):
+        print 'died'
+def genObstacles(num_obstacles, width, height, circle = 1):
     # randomly distributed point obstacles
     if not circle:
-        obstacles = np.round(np.random.rand(width*num_obstacles,2) * width)
+        obstacles = np.round(np.random.rand(num_obstacles,2) * [width, height])
         obstacles = obstacles.astype(int)
+
+        # remove out of range obstacles
+        obstacles = obstacles[obstacles[:,0] >= 0] # x GTE 0
+        obstacles = obstacles[obstacles[:,0] < width] # x LT width
+        obstacles = obstacles[obstacles[:,1] >= 0] # y GTE 0
+        obstacles = obstacles[obstacles[:,1] < height] # y LT height
         return tuple(map(tuple, obstacles))
 
     # randomly placed circular objects
@@ -164,18 +173,26 @@ def genObstacles(num_obstacles, width, circle = 1):
         for row in obstacle_locs:
             obstacles = np.vstack((obstacles, gencircle(10, row[0], row[1])))
 
+        # strip out obstacles that are out of range
+        obstacles = obstacles[obstacles[:,0] >= 0] # x GTE 0
+        obstacles = obstacles[obstacles[:,0] < width] # x LT width
+        obstacles = obstacles[obstacles[:,1] >= 0] # y GTE 0
+        obstacles = obstacles[obstacles[:,1] < height] # y LT height
+
+        obstacles = np.unique(obstacles, axis = 0)
+
         obstacles = obstacles.astype(int)
         return tuple(map(tuple, obstacles)) # convert to tuple
 
 
 if __name__ == '__main__':
 # configs
-    width = 50
-    height = 50
-    num_obstacles = 2
-    circular_obstacles = True # False: randomly placed point obstacles
+    width = 100
+    height = 200
+    num_obstacles = 200
+    circular_obstacles = False # False: randomly placed point obstacles
 
-    obstacles = genObstacles(num_obstacles,width,circular_obstacles)
+    obstacles = genObstacles(num_obstacles,width,height,circular_obstacles)
 
 # plot the obstacles
     xobs, yobs = zip(*obstacles)
