@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import heapq
 from gencircle import *
 import numpy as np
-
+import timeit
 # adapted from: https://www.laurentluce.com/posts/solving-mazes-using-python-simple-recursivity-and-a-search/
 
 class Node(object):
@@ -24,7 +24,7 @@ class AStar(object):
         self.nodes = []
         self.grid_height = None
         self.grid_width = None
-        self.heuristic_type = 2 # 1 = pythagoras, 2 = add 10 thing
+        self.heuristic_type = 1 # 1 = pythagoras, 2 = manhattan distance
 
     def init_grid(self, start, end, obstacles, width, height):
         self.grid_width = width
@@ -41,10 +41,38 @@ class AStar(object):
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
 
+    def init_grid2(self, start, end, obstacles, width, height):
+        positions = self.genPoints(width, height, obstacles)
+        self.grid_width = width
+        self.grid_height = height
+
+        for row in positions:
+            self.nodes.append(Node(row[0], row[1], 0))
+
+        for row in obstacles:
+            self.nodes.append(Node(row[0], row[1], 1))
+
+        self.start = self.get_node(*start)
+        self.end = self.get_node(*end)
+
+
+    def genPoints(self,width, height, obstacles):
+        x, y = np.mgrid[0:width, 0:height]
+        positions = np.column_stack([x.ravel(),
+                                     y.ravel()])  # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
+
+        for row in obstacles:
+            admissable = np.not_equal(positions, row)
+            admissable = np.logical_or(admissable[:, 0], admissable[:,
+                                                         1])  # required because not_equal does element wise, not row wise. Blocks off rows that entirely match obstacle
+            positions = positions[admissable]
+
+        return positions
+
     def heuristic(self, current, target): # pythag distance
         return sqrt((current.x-target.x)**2 + (current.y-target.y)**2)
 
-    def heuristic2(self, cell): # original heuristic used in the example
+    def heuristic2(self, cell): # manhattan distance
         return 10 * (abs(cell.x - self.end.x) + abs(cell.y - self.end.y))
 
     def get_node(self, x, y):
@@ -91,7 +119,7 @@ class AStar(object):
             nextNode.h = self.heuristic(nextNode, self.end)
 
         elif self.heuristic_type is 2:
-            nextNode.g = node.g + 10 # add 10
+            nextNode.g = node.g + 10 # manhattan distance
             nextNode.h = self.heuristic2(nextNode)  # self.heuristic2(nextNode) #self.heuristic(nextNode, self.end)
 
         nextNode.f = nextNode.g + nextNode.h
@@ -134,7 +162,7 @@ def genObstacles(num_obstacles, width, circle = 1):
         obstacle_locs = np.round(np.random.rand(num_obstacles, 2) * width)
         obstacles = np.empty([1, 2])
         for row in obstacle_locs:
-            obstacles = np.vstack((obstacles, gencircle(50, row[0], row[1])))
+            obstacles = np.vstack((obstacles, gencircle(10, row[0], row[1])))
 
         obstacles = obstacles.astype(int)
         return tuple(map(tuple, obstacles)) # convert to tuple
@@ -142,9 +170,9 @@ def genObstacles(num_obstacles, width, circle = 1):
 
 if __name__ == '__main__':
 # configs
-    width = 500
-    height = 500
-    num_obstacles = 10
+    width = 50
+    height = 50
+    num_obstacles = 2
     circular_obstacles = True # False: randomly placed point obstacles
 
     obstacles = genObstacles(num_obstacles,width,circular_obstacles)
@@ -158,7 +186,14 @@ if __name__ == '__main__':
 # run the algorithm
     print 'Algorithm'
     astar = AStar()
-    astar.init_grid([0,0], [width - 1,height - 1], obstacles, width, height)
+
+    start_time = timeit.default_timer()
+
+    astar.init_grid2([0,0], [width - 1,height - 1], obstacles, width, height)
+    elapsed = timeit.default_timer() - start_time
+    print elapsed
+
+
     print 'Process start'
     result = astar.process()
 

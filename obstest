@@ -1,0 +1,65 @@
+# need a faster way to generate the grid
+
+# numpy array of x, y, bool for obstacle
+# logical index it so that the obstacle flag gets set according to the input obstacle np array
+#
+# run through each row, generate an obhect with the x,y,obstacle from each row
+
+import numpy as np
+
+width = 200
+height = 200
+
+obstacles = np.array([[0,0],[1,1]])
+
+# generate the basic grid
+X, Y = np.mgrid[0:width, 0:height]
+# create a matrix with columns x, y, obstacle_flag.
+# positions = np.column_stack([X.ravel(), Y.ravel(),np.zeros((width*height,1), int)]) # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
+positions = np.column_stack([X.ravel(), Y.ravel()]) # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
+
+
+def genPoints(width, height, obstacles):
+    x, y = np.mgrid[0:width, 0:height]
+    positions = np.column_stack([x.ravel(), y.ravel()]) # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
+
+    for row in obstacles:
+        admissable = np.not_equal(positions, row)
+        admissable = np.logical_or(admissable[:, 0], admissable[:, 1]) # required because not_equal does element wise, not row wise. Blocks off rows that entirely match obstacle
+        positions = positions[admissable]
+
+    return positions
+
+genpoints()
+
+# positions[[positions[:,0:1] == obstacles[:,0:1]],2] = 1
+
+# c = np.isin(positions[:,0:1], obstacles)
+
+# b = positions[(positions[:,0] == obstacles[:,0]).ravel(),]
+# c = np.where(positions[:, 0:1] == obstacles[:,0:1])
+
+# d = np.in1d(positions[:,0:1], obstacles)
+
+# c = (positions[:, 0:1] == [1,1])
+
+
+# c= positions[np.apply_along_axis(lambda x: x[0:1] in obstacles, 1, positions),2] = 1
+for row in obstacles:
+    # print row
+    # print positions[positions[:, 0:1] == row]
+    # positions = np.delete(positions, positions[positions[:,0:1] == row], axis = 0)
+    # positions = np.delete(positions, np.logical_and(positions[:,0] == row[0],positions[:,1] == row[1]), axis=0)
+    # keep = np.logical_and(positions)
+    # mask = positions[np.ma.masked_not_equal(positions, row)]
+    # positions = np.ma.masked_array(positions, mask[:,0])
+    # mask = np.any(positions[:] == row, axis = 1)
+    # positions = positions[(np.logical_not(mask)),:]
+
+
+    # d = np.where((positions != (row)).all(axis = 1))
+    d = np.not_equal(positions, row)
+    d = np.logical_or(d[:,0],d[:,1])
+    positions = positions[d]
+
+print positions
