@@ -30,7 +30,7 @@ class GeoCoords(object):
         sw = shapely.geometry.Point((sw_in[1], sw_in[0])) # lon, lat
         ne = shapely.geometry.Point((ne_in[1], ne_in[0]))
 
-        stepsize = 20 # note: this is not metres in Surrey (due to projection widening near the equator). Metres = stepsize/2 ish
+        stepsize = 15 # note: this is not metres in Surrey (due to projection widening near the equator). Metres = stepsize/2 ish
         # using haversine, come up with a better way to understand the grid resolution
 
         # Project corners to target projection (turn to metres)

@@ -181,15 +181,15 @@ def checkObstacles(obstacles, width, height):
 
 if __name__ == '__main__':
 # configs
-    width = 12
-    height = 37
     num_obstacles = 1
     circular_obstacles = True # False: randomly placed point obstacles
 
-    obstacles = genObstacles(num_obstacles,width,height,circular_obstacles)
-
     geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330]) # flight bounds
-    geo.gridpoints
+    print geo.width, geo.height
+    width = geo.width
+    height = geo.height
+
+    obstacles = genObstacles(num_obstacles, width, height, circular_obstacles)
 
 # plot the obstacles
     xobs, yobs = zip(*obstacles)
@@ -200,7 +200,7 @@ if __name__ == '__main__':
 # run the algorithm
     astar = AStar()
 
-    astar.init_grid3([0,0], [geo.width - 1,geo.height - 1], obstacles, geo.gridpoints,geo.width, geo.height)
+    astar.init_grid3([0,0], [width - 1,height - 1], obstacles, geo.gridpoints,width, height)
 
     result = astar.process()
 
