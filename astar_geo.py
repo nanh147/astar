@@ -21,6 +21,7 @@ class Node(object):
         self.lat = lat
         self.lon = lon
 
+
 class AStar(object):
     def __init__(self):
         self.open = []
@@ -30,6 +31,8 @@ class AStar(object):
         self.grid_height = None
         self.grid_width = None
         self.heuristic_type = 1 # 1 = pythagoras, 2 = manhattan distance
+        self.geo_path = []
+        self.grid_path = []
 
     def init_grid3(self, start, end, obstacles, geo_coords, width, height):
         self.grid_width = width
@@ -48,8 +51,8 @@ class AStar(object):
         # Now that everything is in order, append the geo coordinates
         positions = np.hstack([positions, geo_coords[:,2:4]])
 
-        for row in positions:
-            self.nodes.append(Node(int(row[0]), int(row[1]), row[3], row[4], row[2])) # create the list of nodes
+        # create the list of nodes
+        self.nodes = [Node(int(row[0]), int(row[1]), row[3], row[4], row[2]) for row in positions]
 
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
@@ -100,14 +103,22 @@ class AStar(object):
     def show_path(self):
         node = self.end
         path = []
-        path.append((node.x, node.y))
+        self.grid_path.append((node.x, node.y))
+        self.geo_path.append((node.lat, node.lon))
+
         while node.parent is not self.start:
             node = node.parent
-            path.append((node.x, node.y))
+            self.grid_path.append((node.x, node.y))
+            self.geo_path.append((node.lat, node.lon))
             # print node.x, node.y
 
-        path.append((self.start.x, self.start.y))
-        path.reverse()
+        self.grid_path.append((self.start.x, self.start.y))
+        self.geo_path.append((self.start.lat, self.start.lon))
+
+        self.grid_path.reverse()
+        self.geo_path.reverse()
+
+
         return path
 
     def update_node(self, nextNode, node):
@@ -203,10 +214,10 @@ if __name__ == '__main__':
 
     astar.init_grid3([0,0], [width - 1,height - 1], obstacles, geo.gridpoints,width, height)
 
-    result = astar.process()
+    astar.process()
 
 # plot results
-    x, y = zip(*result)
+    x, y = zip(*astar.grid_path)
     plt.plot(x,y, '-gd')
     plt.show()
 
