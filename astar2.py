@@ -163,7 +163,7 @@ def genObstacles(num_obstacles, width, height, circle = 1):
         obstacle_locs = np.round(np.random.rand(num_obstacles, 2) * width)
         obstacles = np.empty([1, 2])
         for row in obstacle_locs:
-            obstacles = np.vstack((obstacles, gencircle(10, row[0], row[1])))
+            obstacles = np.vstack((obstacles, gencircle(5, row[0], row[1])))
 
         obstacles = checkObstacles(obstacles, width, height)
         return tuple(map(tuple, obstacles)) # convert to tuple
@@ -185,9 +185,9 @@ def checkObstacles(obstacles, width, height):
 
 if __name__ == '__main__':
 # configs
-    width = 300
-    height = 300
-    num_obstacles = 5
+    width = 12
+    height = 37
+    num_obstacles = 1
     circular_obstacles = True # False: randomly placed point obstacles
 
     obstacles = genObstacles(num_obstacles,width,height,circular_obstacles)
@@ -201,7 +201,7 @@ if __name__ == '__main__':
 # run the algorithm
     astar = AStar()
 
-    astar.init_grid([0,0], [width - 1,height - 1], obstacles, width, height)
+    astar.init_grid2([0,0], [width - 1,height - 1], obstacles, width, height)
 
     result = astar.process()
 

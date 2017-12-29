@@ -1,56 +1,216 @@
-# Astar_geo: adapting the A* code to have geographic reference
-
-# Richard Arthurs
-# Main example: https://stackoverflow.com/questions/40342355/how-can-i-generate-a-regular-geographic-grid-using-python
-
-# generate the list of geo coords and tag with x,y
-# append those or somehow bring them in to the Node object creation
-# then each node object will have a coordinate
-# at each waypoint, run A* search to the next waypoint
-# the result list will be a path of coordinates, so fly it (potentially look ahead a few places to alter the flight vector)
-#   - take average of the vector from current location to the next few in the sequence (will cut corners a bit)
-
-#-------------------
-# how this works: transform the initial coordinate into a system that uses metres to describe locations.
-# Now that the reference is metres, increment those according to the step size.
-# Transform those metre positions back into coordinate degrees to have a grid of coordinates
-
-import shapely.geometry
-import pyproj
+from math import sqrt
+import matplotlib.pyplot as plt
+import heapq
+from gencircle import *
 import numpy as np
+from GeoCoords import *
 
-# Set up projections
-p_ll = pyproj.Proj(init='epsg:4326')
-p_mt = pyproj.Proj(init='epsg:3857') # metric; same as EPSG:900913
+# example of image on map plot: http://scitools.org.uk/cartopy/docs/latest/matplotlib/advanced_plotting.html
 
-# Create corners of rectangle to be transformed to a grid
-sw = shapely.geometry.Point((-122.796805,49.128397))
-ne = shapely.geometry.Point((-122.790330,49.129779))
+# adapted from: https://www.laurentluce.com/posts/solving-mazes-using-python-simple-recursivity-and-a-search/
 
-stepsize = 50 # note: this is not metres in Surrey (due to projection widening near the equator). Metres = stepsize/2 ish
-# using haversine, come up with a better way to understand the grid resolution
+class Node(object):
+    def __init__(self, x, y, obstacle):
+        self.obstacle = obstacle;
+        self.x = x
+        self.y = y
+        self.parent = None
+        self.g = 0 # node-start
+        self.h = 0 # node-target
+        self.f = 0 # g + h
 
-# Project corners to target projection
-s = pyproj.transform(p_ll, p_mt, sw.x, sw.y) # Transform point to 3857
-e = pyproj.transform(p_ll, p_mt, ne.x, ne.y) #
+class AStar(object):
+    def __init__(self):
+        self.open = []
+        heapq.heapify(self.open)
+        self.closed = set()
+        self.nodes = []
+        self.grid_height = None
+        self.grid_width = None
+        self.heuristic_type = 1 # 1 = pythagoras, 2 = manhattan distance
 
-# Iterate over 2D area
-gridpoints = np.empty([0,4])
-x = s[0]
-while x < e[0]:
-    y = s[1]
-    while y < e[1]:
-        p = pyproj.transform(p_mt, p_ll, x, y)
-        d = (x-s[0],y-s[1],p[0], p[1])
-        gridpoints = np.vstack((gridpoints, d))
-        y += stepsize
-    x += stepsize
+    def init_grid3(self, start, end, obstacles, geo_coords, width, height):
+        self.grid_width = width
+        self.grid_height = height
+        # Keep everything a matrix as long as possible. Flag obstacle rows with 1, free with 0. Stack the matrices, sort, then append the coordinates matrix.
+        positions = self.genPoints(width, height, obstacles)
+        positions = np.hstack([positions, np.zeros([np.size(positions, 0),1])]) # add on a colum of zeros to indicate free space
 
-discard, numx = np.unique(gridpoints[:,0], return_counts=True, axis = 0) # number of x divisions
-discard, numy = np.unique(gridpoints[:,1], return_counts=True, axis = 0) # number of y divisions
+        obstacles = np.hstack([obstacles, np.ones([np.size(obstacles,0),1])]) # add a column of ones to indicate obstacle
+        positions = np.vstack([positions, obstacles]) # free and open coords on top of each other
 
-print 'Generation complete.'
-# this CSV can be directly copied and pasted here: https://www.darrinward.com/lat-long/
-with open('testout.csv', 'wb') as of:
-    for row in gridpoints:
-        of.write('{:f};{:f}\n'.format(row[3], row[2]))
+        # Sort all of the grid coords so they match up with the geo coords to be appended later
+        positions = positions[positions[:,1].argsort(kind = 'mergesort')] # use mergesort which is stable to preserve rows: https://stackoverflow.com/questions/2828059/sorting-arrays-in-numpy-by-column?noredirect=1&lq=1
+        positions = positions[positions[:,0].argsort(axis = 0, kind = 'mergesort')]
+
+        # Now that everything is in order, append the geo coordinates
+        positions = np.hstack([positions, geo_coords[:,2:3]])
+
+        for row in positions:
+            self.nodes.append(Node(int(row[0]), int(row[1]), row[2])) # create the list of
+
+        self.start = self.get_node(*start)
+        self.end = self.get_node(*end)
+
+
+    def genPoints(self,width, height, obstacles):
+        x, y = np.mgrid[0:width, 0:height]
+        # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
+        positions = np.column_stack([x.ravel(),y.ravel()])
+
+        for row in obstacles:
+            admissable = np.not_equal(positions, row)
+            admissable = np.logical_or(admissable[:, 0], admissable[:,1])  # required because not_equal does element wise, not row wise. Blocks off rows that entirely match obstacle
+            positions = positions[admissable]
+
+        return positions
+
+    def heuristic(self, current, target): # pythag distance
+        return sqrt((current.x-target.x)**2 + (current.y-target.y)**2)
+
+    def heuristic2(self, cell): # manhattan distance
+        return 10 * (abs(cell.x - self.end.x) + abs(cell.y - self.end.y))
+
+    def get_node(self, x, y):
+        return self.nodes[x * self.grid_height + y] # they're linear indexed
+
+    def get_neighbours(self, node):
+        neighbours = []
+        if node.x < self.grid_width - 1:
+            neighbours.append(self.get_node(node.x + 1, node.y))
+        if node.y > 0:
+            neighbours.append(self.get_node(node.x, node.y - 1))
+        if node.x > 0:
+            neighbours.append(self.get_node(node.x - 1, node.y))
+        if node. y < self.grid_height - 1:
+            neighbours.append(self.get_node(node.x, node.y + 1))
+        if node.y > 0 and node.y < self.grid_height -1 and node.x < self.grid_width-1: # up, right
+            neighbours.append(self.get_node(node.x + 1, node.y + 1))
+        if node.y > 0 and node.y < self.grid_height -1 and node.x > 0: # up, left
+            neighbours.append(self.get_node(node.x - 1, node.y + 1))
+        if node.y > 1 and node.y < self.grid_height and node.x < self.grid_width -1: # down, right # check if I can extend grid height by 1
+            neighbours.append(self.get_node(node.x + 1, node.y - 1))
+        if node.y > 1 and node.y < self.grid_height and node.x > 0: # down, left
+            neighbours.append(self.get_node(node.x - 1, node.y - 1))
+
+        return neighbours
+
+    def show_path(self):
+        node = self.end
+        path = []
+        path.append((node.x, node.y))
+        while node.parent is not self.start:
+            node = node.parent
+            path.append((node.x, node.y))
+            # print node.x, node.y
+
+        path.append((self.start.x, self.start.y))
+        path.reverse()
+        return path
+
+    def update_node(self, nextNode, node):
+        # updates the next node
+        if self.heuristic_type is 1: # pythagoras
+            nextNode.g = self.heuristic(nextNode, self.start)
+            nextNode.h = self.heuristic(nextNode, self.end)
+
+        elif self.heuristic_type is 2:
+            nextNode.g = node.g + 10 # manhattan distance
+            nextNode.h = self.heuristic2(nextNode)  # self.heuristic2(nextNode) #self.heuristic(nextNode, self.end)
+
+        nextNode.f = nextNode.g + nextNode.h
+        nextNode.parent = node
+
+    def process(self):
+        heapq.heappush(self.open, (self.start.f, self.start)) # add starting node to top of heap
+        while len(self.open):
+            f, node = heapq.heappop(self.open) # pop node from queue
+            self.closed.add(node) # add to closed
+
+            if node is self.end: # finished, find the path
+                return self.show_path()
+
+            neighbours = self.get_neighbours(node) # grab current node's neighbours
+            for neighbour in neighbours:
+                if not neighbour.obstacle and neighbour not in self.closed:
+                    if (neighbour.f, neighbour) in self.open:
+
+                        # of the neighbours, select one with the optimal heuristic depending on which heuristic is being used
+                        if self.heuristic_type is 1:
+                            if neighbour.h < node.h:
+                                self.update_node(neighbour, node)
+                        elif self.heuristic_type is 2:                     # if neighbour is in open list, check if current path is better than the one previously found for this neighbour
+                            if neighbour.g > node.g + 10:
+                                self.update_node(neighbour, node)
+                    else:
+                        self.update_node(neighbour, node)
+                        heapq.heappush(self.open, (neighbour.f, neighbour))
+        print 'died'
+
+def genObstacles(num_obstacles, width, height, circle = 1):
+    # randomly distributed point obstacles
+    if not circle:
+        obstacles = np.round(np.random.rand(num_obstacles,2) * [width, height])
+        obstacles = checkObstacles(obstacles, width, height)
+        return tuple(map(tuple, obstacles))
+
+    # randomly placed circular objects
+    else:
+        obstacle_locs = np.round(np.random.rand(num_obstacles, 2) * width)
+        obstacles = np.empty([1, 2])
+        for row in obstacle_locs:
+            obstacles = np.vstack((obstacles, gencircle(5, row[0], row[1])))
+
+        obstacles = checkObstacles(obstacles, width, height)
+        return tuple(map(tuple, obstacles)) # convert to tuple
+
+def checkObstacles(obstacles, width, height):
+    # the obstacle matrix must be unique integers that are within the map. This function ensures that
+    # strip out obstacles that are out of range
+    obstacles = obstacles.astype(int)
+    obstacles = obstacles[obstacles[:, 0] >= 0]  # x GTE 0
+    obstacles = obstacles[obstacles[:, 0] < width]  # x LT width
+    obstacles = obstacles[obstacles[:, 1] >= 0]  # y GTE 0
+    obstacles = obstacles[obstacles[:, 1] < height]  # y LT height
+
+    obstacles = np.unique(obstacles,
+                          axis=0)  # must remove duplicate obstacles too or they'll be added to the list of locations :(
+
+    return obstacles
+
+
+if __name__ == '__main__':
+# configs
+    width = 12
+    height = 37
+    num_obstacles = 1
+    circular_obstacles = True # False: randomly placed point obstacles
+
+    obstacles = genObstacles(num_obstacles,width,height,circular_obstacles)
+
+    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330]) # flight bounds
+    geo.gridpoints
+
+# plot the obstacles
+    xobs, yobs = zip(*obstacles)
+    plt.axis([-1, width, -1, height])
+    plt.plot(xobs, yobs, 'kx')
+    plt.grid()
+
+# run the algorithm
+    astar = AStar()
+
+    astar.init_grid3([0,0], [geo.width - 1,geo.height - 1], obstacles, geo.gridpoints,geo.width, geo.height)
+
+    result = astar.process()
+
+# plot results
+    x, y = zip(*result)
+    plt.plot(x,y, '-gd')
+    plt.show()
+
+#
+# -122.796805,49.128397
+# -122.790330,49.129779
+#
+
