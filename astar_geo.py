@@ -13,7 +13,7 @@
 #-------------------
 # how this works: transform the initial coordinate into a system that uses metres to describe locations.
 # Now that the reference is metres, increment those according to the step size.
-# Transform those metre positions into coordinate degrees
+# Transform those metre positions back into coordinate degrees to have a grid of coordinates
 
 import shapely.geometry
 import pyproj
@@ -24,37 +24,33 @@ p_ll = pyproj.Proj(init='epsg:4326')
 p_mt = pyproj.Proj(init='epsg:3857') # metric; same as EPSG:900913
 
 # Create corners of rectangle to be transformed to a grid
-# SW: 49.12836,-122.7972
-# NE: 49.12934, -122.7900
+sw = shapely.geometry.Point((-122.796805,49.128397))
+ne = shapely.geometry.Point((-122.790330,49.129779))
 
-nw = shapely.geometry.Point((-122.7953373,49.1289449))
-se = shapely.geometry.Point((-122.7911861,49.1283074))
-
-stepsize = 5 # 5 m grid step size
+stepsize = 50 # note: this is not metres in Surrey (due to projection widening near the equator). Metres = stepsize/2 ish
+# using haversine, come up with a better way to understand the grid resolution
 
 # Project corners to target projection
-s = pyproj.transform(p_ll, p_mt, nw.x, nw.y) # Transform NW point to 3857
-e = pyproj.transform(p_ll, p_mt, se.x, se.y) # .. same for SE
+s = pyproj.transform(p_ll, p_mt, sw.x, sw.y) # Transform point to 3857
+e = pyproj.transform(p_ll, p_mt, ne.x, ne.y) #
 
 # Iterate over 2D area
-gridpoints = np.empty([1,4])
+gridpoints = np.empty([0,4])
 x = s[0]
 while x < e[0]:
-    print 'xitr'
     y = s[1]
-    while y > e[1]:
-
-        # p = shapely.geometry.Point(pyproj.transform(p_mt, p_ll, x, y))
+    while y < e[1]:
         p = pyproj.transform(p_mt, p_ll, x, y)
-        d = (p[0], p[1], x-s[0],y-s[1])
+        d = (x-s[0],y-s[1],p[0], p[1])
         gridpoints = np.vstack((gridpoints, d))
-        # gridpoints.append(p)
-        y -= stepsize
+        y += stepsize
     x += stepsize
 
-    # gridpoints = np.unique(gridpoints, axis = 0)
+discard, numx = np.unique(gridpoints[:,0], return_counts=True, axis = 0) # number of x divisions
+discard, numy = np.unique(gridpoints[:,1], return_counts=True, axis = 0) # number of y divisions
 
+print 'Generation complete.'
+# this CSV can be directly copied and pasted here: https://www.darrinward.com/lat-long/
 with open('testout.csv', 'wb') as of:
-    of.write('lon;lat\n')
-    for p in gridpoints:
-        of.write('{:f};{:f}\n'.format(p.x, p.y))
+    for row in gridpoints:
+        of.write('{:f};{:f}\n'.format(row[3], row[2]))

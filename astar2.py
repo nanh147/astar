@@ -185,8 +185,8 @@ def checkObstacles(obstacles, width, height):
 
 if __name__ == '__main__':
 # configs
-    width = 100
-    height = 100
+    width = 300
+    height = 300
     num_obstacles = 5
     circular_obstacles = True # False: randomly placed point obstacles
 
