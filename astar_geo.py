@@ -10,14 +10,16 @@ from GeoCoords import *
 # adapted from: https://www.laurentluce.com/posts/solving-mazes-using-python-simple-recursivity-and-a-search/
 
 class Node(object):
-    def __init__(self, x, y, obstacle):
-        self.obstacle = obstacle;
+    def __init__(self, x, y, lat, lon, obstacle):
+        self.obstacle = obstacle
         self.x = x
         self.y = y
         self.parent = None
         self.g = 0 # node-start
         self.h = 0 # node-target
         self.f = 0 # g + h
+        self.lat = lat
+        self.lon = lon
 
 class AStar(object):
     def __init__(self):
@@ -32,7 +34,7 @@ class AStar(object):
     def init_grid3(self, start, end, obstacles, geo_coords, width, height):
         self.grid_width = width
         self.grid_height = height
-        # Keep everything a matrix as long as possible. Flag obstacle rows with 1, free with 0. Stack the matrices, sort, then append the coordinates matrix.
+        # Keep everything a matrix as long as possible. Flag obstacle rows with 1, free with 0. Stack the matrices, sort, then append the geo coordinates matrix.
         positions = self.genPoints(width, height, obstacles)
         positions = np.hstack([positions, np.zeros([np.size(positions, 0),1])]) # add on a colum of zeros to indicate free space
 
@@ -44,10 +46,10 @@ class AStar(object):
         positions = positions[positions[:,0].argsort(axis = 0, kind = 'mergesort')]
 
         # Now that everything is in order, append the geo coordinates
-        positions = np.hstack([positions, geo_coords[:,2:3]])
+        positions = np.hstack([positions, geo_coords[:,2:4]])
 
         for row in positions:
-            self.nodes.append(Node(int(row[0]), int(row[1]), row[2])) # create the list of
+            self.nodes.append(Node(int(row[0]), int(row[1]), row[3], row[4], row[2])) # create the list of nodes
 
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
@@ -156,16 +158,16 @@ def genObstacles(num_obstacles, width, height, circle = 1):
 
     # randomly placed circular objects
     else:
-        obstacle_locs = np.round(np.random.rand(num_obstacles, 2) * width)
+        obstacle_locs = np.round(np.random.rand(num_obstacles, 2) * int(np.mean([width, height]))) # scale by mean so that rectangular grids don't chop most objects
         obstacles = np.empty([1, 2])
         for row in obstacle_locs:
-            obstacles = np.vstack((obstacles, gencircle(5, row[0], row[1])))
+            obstacles = np.vstack((obstacles, gencircle(10, row[0], row[1])))
 
         obstacles = checkObstacles(obstacles, width, height)
         return tuple(map(tuple, obstacles)) # convert to tuple
 
 def checkObstacles(obstacles, width, height):
-    # the obstacle matrix must be unique integers that are within the map. This function ensures that
+    # the obstacle matrix must be unique integers that are within the map. This function will
     # strip out obstacles that are out of range
     obstacles = obstacles.astype(int)
     obstacles = obstacles[obstacles[:, 0] >= 0]  # x GTE 0
@@ -175,16 +177,15 @@ def checkObstacles(obstacles, width, height):
 
     obstacles = np.unique(obstacles,
                           axis=0)  # must remove duplicate obstacles too or they'll be added to the list of locations :(
-
     return obstacles
 
 
 if __name__ == '__main__':
 # configs
-    num_obstacles = 1
+    num_obstacles = 5 # With very rectangular grids, many obstacles will be out of range so you'll get fewer than this
     circular_obstacles = True # False: randomly placed point obstacles
 
-    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330]) # flight bounds
+    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],4) # flight bounds
     print geo.width, geo.height
     width = geo.width
     height = geo.height
@@ -194,7 +195,7 @@ if __name__ == '__main__':
 # plot the obstacles
     xobs, yobs = zip(*obstacles)
     plt.axis([-1, width, -1, height])
-    plt.plot(xobs, yobs, 'kx')
+    plt.plot(xobs, yobs, 'ko')
     plt.grid()
 
 # run the algorithm
@@ -209,8 +210,4 @@ if __name__ == '__main__':
     plt.plot(x,y, '-gd')
     plt.show()
 
-#
-# -122.796805,49.128397
-# -122.790330,49.129779
-#
 

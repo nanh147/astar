@@ -21,7 +21,10 @@ import numpy as np
 
 class GeoCoords(object):
 
-    def __init__(self,sw_in, ne_in):
+    def __init__(self,sw_in, ne_in, stepsize):
+         # note: step size is not metres in Surrey (due to projection widening near the equator). Metres = stepsize/2 ish
+        # using haversine, come up with a better way to understand the grid resolution
+
         # Set up projections
         p_ll = pyproj.Proj(init='epsg:4326') # lat lon projection
         p_mt = pyproj.Proj(init='epsg:3857') # metric; same as EPSG:900913, in metres
@@ -29,9 +32,6 @@ class GeoCoords(object):
         # Create corners of the rectangle that outlines the grid
         sw = shapely.geometry.Point((sw_in[1], sw_in[0])) # lon, lat
         ne = shapely.geometry.Point((ne_in[1], ne_in[0]))
-
-        stepsize = 15 # note: this is not metres in Surrey (due to projection widening near the equator). Metres = stepsize/2 ish
-        # using haversine, come up with a better way to understand the grid resolution
 
         # Project corners to target projection (turn to metres)
         s = pyproj.transform(p_ll, p_mt, sw.x, sw.y) # Transform point to 3857
