@@ -37,22 +37,16 @@ class AStar(object):
     def init_grid3(self, start, end, obstacles, geo_coords, width, height):
         self.grid_width = width
         self.grid_height = height
-        # Keep everything a matrix as long as possible. Flag obstacle rows with 1, free with 0. Stack the matrices, sort, then append the geo coordinates matrix.
-        positions = self.genPoints(width, height, obstacles)
-        positions = np.hstack([positions, np.zeros([np.size(positions, 0),1])]) # add on a colum of zeros to indicate free space
 
-        obstacles = np.hstack([obstacles, np.ones([np.size(obstacles,0),1])]) # add a column of ones to indicate obstacle
-        positions = np.vstack([positions, obstacles]) # free and open coords on top of each other
+        # get indices of the rows with obstacle xy positions, mark the obstacle flag
+        xyTree = scipy.spatial.cKDTree(geo_coords[:, 0:2])
+        dists, indices = xyTree.query(obstacles)  # all of the obstacle locs on the grid will return zero for distance
+        indices = indices[dists == 0.0]  # retrieve only indices for obstacle points on the grid
 
-        # Sort all of the grid coords so they match up with the geo coords to be appended later
-        positions = positions[positions[:,1].argsort(kind = 'mergesort')] # use mergesort which is stable to preserve rows: https://stackoverflow.com/questions/2828059/sorting-arrays-in-numpy-by-column?noredirect=1&lq=1
-        positions = positions[positions[:,0].argsort(axis = 0, kind = 'mergesort')]
-
-        # Now that everything is in order, append the geo coordinates
-        positions = np.hstack([positions, geo_coords[:,2:4]])
+        geo_coords[indices,4] = 1 # flag obstacles
 
         # create the list of nodes
-        self.nodes = [Node(int(row[0]), int(row[1]), row[3], row[4], row[2]) for row in positions]
+        self.nodes = [Node(int(row[0]), int(row[1]), row[2], row[3], row[4]) for row in geo_coords]
 
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)

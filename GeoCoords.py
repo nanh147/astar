@@ -42,22 +42,25 @@ class GeoCoords(object):
         e = pyproj.transform(p_ll, p_mt, ne.x, ne.y)
 
         # Iterate over width and height
-        self.gridpoints = np.empty([0,4])
+        self.gridpoints = np.empty([0,5])
         x = s[0]
+        x_grid = 0 # to handle the grid positions
         while x < e[0]:
             y = s[1]
+            y_grid = 0
             while y < e[1]:
                 p = pyproj.transform(p_mt, p_ll, x, y)
-                d = (x-s[0],y-s[1],p[1],p[0]) # x, y, lat, lon
+                d = (x_grid,y_grid,p[1],p[0],0) # x, y, lat, lon, obstacle_flag
                 self.gridpoints = np.vstack((self.gridpoints, d))
                 y += stepsize
+                y_grid += 1
             x += stepsize
+            x_grid += 1
 
         # determine the number of divisions
-        discard, self.width = np.unique(self.gridpoints[:,1], return_counts=True, axis = 0) # number of x divisions
         discard, self.height = np.unique(self.gridpoints[:,0], return_counts=True, axis = 0) # number of y divisions
-        self.width = self.width[0]
-        self.height = self.height[0]
+        self.height = int(self.height[0])
+        self.width = int(self.gridpoints[-1,0] + 1)
 
         # Create KD tree so that we can query closest grid point to a real location: https: // stackoverflow.com / questions / 36798782 / scipy - ckdtree - nearest - neighbor - including - zeros - distance
         self.referenceTree = scipy.spatial.cKDTree(self.gridpoints[:,2:4]) # getClosestPoint function
