@@ -57,7 +57,6 @@ class AStar(object):
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
 
-
     def genPoints(self,width, height, obstacles):
         x, y = np.mgrid[0:width, 0:height]
         # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
@@ -117,8 +116,6 @@ class AStar(object):
 
         self.grid_path.reverse()
         self.geo_path.reverse()
-
-
         return path
 
     def update_node(self, nextNode, node):
@@ -196,7 +193,7 @@ if __name__ == '__main__':
     num_obstacles = 5 # With very rectangular grids, many obstacles will be out of range so you'll get fewer than this
     circular_obstacles = True # False: randomly placed point obstacles
 
-    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],4) # flight bounds
+    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],2) # flight bounds
     print geo.width, geo.height
     width = geo.width
     height = geo.height

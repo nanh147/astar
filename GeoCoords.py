@@ -18,12 +18,15 @@
 import shapely.geometry
 import pyproj
 import numpy as np
+import dronekit as dk
+from math import sqrt
 
 class GeoCoords(object):
-
     def __init__(self,sw_in, ne_in, stepsize):
-         # note: step size is not metres in Surrey (due to projection widening near the equator). Metres = stepsize/2 ish
-        # using haversine, come up with a better way to understand the grid resolution
+        # based on http://boulter.com/gps/distance/, the input stepsize is twice as large as what this procedure calculates
+        # therefore, to actually retrieve the requested resolution, multiply it by 2
+        # I think this is because "metres" get wider near the equator? Either way, this is accurate.
+        stepsize = stepsize*2
 
         # Set up projections
         p_ll = pyproj.Proj(init='epsg:4326') # lat lon projection
@@ -44,7 +47,7 @@ class GeoCoords(object):
             y = s[1]
             while y < e[1]:
                 p = pyproj.transform(p_mt, p_ll, x, y)
-                d = (x-s[0],y-s[1],p[1],p[0]) # un-flipping to make the order lat, lon
+                d = (x-s[0],y-s[1],p[1],p[0]) # x, y, lat, lon
                 self.gridpoints = np.vstack((self.gridpoints, d))
                 y += stepsize
             x += stepsize
@@ -62,3 +65,14 @@ class GeoCoords(object):
                 of.write('{:f};{:f}\n'.format(row[2], row[3]))
 
                 # will need to pick out the obstacles. Do by turning the obs location x,y into a linear index and grabbing the point with it
+
+    def getSpatialResolution(self):
+        dlat = self.gridpoints[0,2] - self.gridpoints[1,2]
+        dlong = self.gridpoints[0,3] - self.gridpoints[1,3]
+        res = sqrt((dlat * dlat) + (dlong * dlong)) * 1.113195e5
+
+        print 'Note: spatial resolution is approximate, and should be slightly better than the following value:'
+        print 'Spatial resolution: ', res,'metres'
+        return res
+
+
