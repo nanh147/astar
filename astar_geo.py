@@ -193,7 +193,7 @@ if __name__ == '__main__':
     num_obstacles = 5 # With very rectangular grids, many obstacles will be out of range so you'll get fewer than this
     circular_obstacles = True # False: randomly placed point obstacles
 
-    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],2) # flight bounds
+    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],2) # flight bounds, spatial resolution
     print geo.width, geo.height
     width = geo.width
     height = geo.height

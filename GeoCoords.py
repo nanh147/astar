@@ -20,6 +20,7 @@ import pyproj
 import numpy as np
 import dronekit as dk
 from math import sqrt
+import scipy.spatial
 
 class GeoCoords(object):
     def __init__(self,sw_in, ne_in, stepsize):
@@ -58,13 +59,14 @@ class GeoCoords(object):
         self.width = self.width[0]
         self.height = self.height[0]
 
+        # Create KD tree so that we can query closest grid point to a real location: https: // stackoverflow.com / questions / 36798782 / scipy - ckdtree - nearest - neighbor - including - zeros - distance
+        self.referenceTree = scipy.spatial.cKDTree(self.gridpoints[:,2:4]) # getClosestPoint function
+
     def saveCSV(self):
         # this CSV can be directly copied and pasted here: https://www.darrinward.com/lat-long/
         with open('testout.csv', 'wb') as of:
             for row in self.gridpoints:
                 of.write('{:f};{:f}\n'.format(row[2], row[3]))
-
-                # will need to pick out the obstacles. Do by turning the obs location x,y into a linear index and grabbing the point with it
 
     def getSpatialResolution(self):
         dlat = self.gridpoints[0,2] - self.gridpoints[1,2]
@@ -74,5 +76,10 @@ class GeoCoords(object):
         print 'Note: spatial resolution is approximate, and should be slightly better than the following value:'
         print 'Spatial resolution: ', res,'metres'
         return res
+
+    def getClosestPoint(self, lat, lon):
+        # you can also call query with a vector of points ... might be useful later
+        dist, index = self.referenceTree.query([lat,lon])
+        return self.gridpoints[index]
 
 
