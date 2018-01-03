@@ -38,12 +38,12 @@ class AStar(object):
         self.grid_width = width
         self.grid_height = height
 
-        # get indices of the rows with obstacle xy positions, mark the obstacle flag
-        xyTree = scipy.spatial.cKDTree(geo_coords[:, 0:2])
-        dists, indices = xyTree.query(obstacles)  # all of the obstacle locs on the grid will return zero for distance
-        indices = indices[dists == 0.0]  # retrieve only indices for obstacle points on the grid
+# Use KD tree to find xy coordinates that match obstacle locations (distance = 0), set obstacle flag
+        xyTree = scipy.spatial.cKDTree(geo_coords[:, 0:2]) # tree in x,y columns
+        dists, obstacle_indices = xyTree.query(obstacles)  # all of the obstacle locs actually on the grid will return zero for distance
+        obstacle_indices = obstacle_indices[dists == 0.0]  # retrieve only indices for obstacle points on the grid
 
-        geo_coords[indices,4] = 1 # flag obstacles
+        geo_coords[obstacle_indices,4] = 1 # flag obstacles
 
         # create the list of nodes
         self.nodes = [Node(int(row[0]), int(row[1]), row[2], row[3], row[4]) for row in geo_coords]
@@ -168,6 +168,23 @@ def genObstacles(num_obstacles, width, height, circle = 1):
         obstacles = checkObstacles(obstacles, width, height)
         return tuple(map(tuple, obstacles)) # convert to tuple
 
+def genObstacles2(num_obstacles, circle, geo):
+    if circle:
+        # lat, lon columns of random weight 0:1
+        obs_rand_weights = np.random.rand(num_obstacles, 2)
+        # linearly interpolate based on the random weighting
+        # note: this will probably break in other hemispheres due to signs assumed in interpolation
+        obs = ([np.min([geo.sw_lat,geo.ne_lat]),np.min([geo.sw_lon,geo.ne_lon])] + [np.abs(geo.sw_lat - geo.ne_lat),np.abs(geo.sw_lon - geo.ne_lon)] * obs_rand_weights)
+        indices = geo.getClosestPoint(obs)
+
+    # START HERE Richard: at the point where we randomly generate centre positions.
+    # Now feed those to circle generator and return the full list of pts that comprise the obstacles
+    # also reduce the lat,lon range by x% so we have fewer cut off obstacles
+
+    # else:
+    print obs_rand_weights
+
+
 def checkObstacles(obstacles, width, height):
     # the obstacle matrix must be unique integers that are within the map. This function will
     # strip out obstacles that are out of range
@@ -188,6 +205,12 @@ if __name__ == '__main__':
     circular_obstacles = True # False: randomly placed point obstacles
 
     geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],2) # flight bounds, spatial resolution
+
+
+    # testing
+    genObstacles2(num_obstacles, 1, geo)
+
+
     print geo.width, geo.height
     width = geo.width
     height = geo.height

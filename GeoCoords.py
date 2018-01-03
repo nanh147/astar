@@ -29,6 +29,11 @@ class GeoCoords(object):
         # I think this is because "metres" get wider near the equator? Either way, this is accurate.
         stepsize = stepsize*2
 
+        self.sw_lat = sw_in[0]
+        self.sw_lon = sw_in[1]
+        self.ne_lat = ne_in[0]
+        self.ne_lon = ne_in[1]
+
         # Set up projections
         p_ll = pyproj.Proj(init='epsg:4326') # lat lon projection
         p_mt = pyproj.Proj(init='epsg:3857') # metric; same as EPSG:900913, in metres
@@ -80,9 +85,9 @@ class GeoCoords(object):
         print 'Spatial resolution: ', res,'metres'
         return res
 
-    def getClosestPoint(self, lat, lon):
+    def getClosestPoint(self, latlon):
         # you can also call query with a vector of points ... might be useful later
-        dist, index = self.referenceTree.query([lat,lon])
+        dist, index = self.referenceTree.query(latlon)
         return self.gridpoints[index]
 
 
