@@ -2,13 +2,13 @@ from math import sqrt
 import matplotlib.pyplot as plt
 import heapq
 import numpy as np
-from GeoCoords import *
-from obstacleTools import *
+from geo_coords import *
+from obstacle import *
 
 # example of image on map plot: http://scitools.org.uk/cartopy/docs/latest/matplotlib/advanced_plotting.html
 
 # adapted from: https://www.laurentluce.com/posts/solving-mazes-using-python-simple-recursivity-and-a-search/
-
+#check
 class Node(object):
     def __init__(self, x, y, lat, lon, obstacle):
         self.obstacle = obstacle

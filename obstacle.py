@@ -1,6 +1,6 @@
 import numpy as np
-from gencircle import *
-from GeoCoords import *
+from gen_circle import *
+from geo_coords import *
 # Obstacle tools - functions related to obstacle generation
 # Author: Richard Arthurs
 

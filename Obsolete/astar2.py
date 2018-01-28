@@ -1,7 +1,7 @@
 from math import sqrt
 import matplotlib.pyplot as plt
 import heapq
-from gencircle import *
+from gen_circle import *
 import numpy as np
 # adapted from: https://www.laurentluce.com/posts/solving-mazes-using-python-simple-recursivity-and-a-search/
 
