@@ -33,10 +33,12 @@ class AStar(object):
         self.heuristic_type = 1 # 1 = pythagoras, 2 = manhattan distance
         self.geo_path = []
         self.grid_path = []
+        self.obstacles = []
 
     def init_grid3(self, start, end, obstacles, geo_coords, width, height):
         self.grid_width = width
         self.grid_height = height
+        self.obstacles = obstacles
 
 # Use KD tree to find xy coordinates that match obstacle locations (distance = 0), set obstacle flag
         xyTree = scipy.spatial.cKDTree(geo_coords[:, 0:2]) # tree in x,y columns
@@ -51,7 +53,7 @@ class AStar(object):
         self.start = self.get_node(*start)
         self.end = self.get_node(*end)
 
-    def genPoints(self,width, height, obstacles):
+    def gen_points(self, width, height, obstacles):
         x, y = np.mgrid[0:width, 0:height]
         # creates x and y columns: https://stackoverflow.com/questions/12864445/numpy-meshgrid-points/12891609
         positions = np.column_stack([x.ravel(),y.ravel()])
@@ -151,7 +153,16 @@ class AStar(object):
                         heapq.heappush(self.open, (neighbour.f, neighbour))
         print 'died'
 
+    def plot_all(self):
+        xobs, yobs = zip(*self.obstacles)
+        plt.axis([-1, self.grid_width, -1, self.grid_height])
+        plt.plot(xobs, yobs, 'ko')
+        plt.grid()
 
+        # Plot path
+        x, y = zip(*self.grid_path)
+        plt.plot(x, y, '-gd')
+        plt.show()
 
 if __name__ == '__main__':
 # configs
@@ -159,18 +170,12 @@ if __name__ == '__main__':
 
     geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],2) # flight bounds (SW, NE), spatial resolution
 
-    #obstacles = genTestObstaclesGeo(5, geo, 10)
+    # obstacles = genTestObstaclesGeo(5, geo, 10)
     obstacles = genObstaclesGeo(geo, [(49.12927299, -122.79221177, 10)])
 
     print geo.width, geo.height
     width = geo.width
     height = geo.height
-
-# plot the obstacles
-    xobs, yobs = zip(*obstacles)
-    plt.axis([-1, width, -1, height])
-    plt.plot(xobs, yobs, 'ko')
-    plt.grid()
 
 # run the algorithm
     astar = AStar()
@@ -178,9 +183,7 @@ if __name__ == '__main__':
     astar.init_grid3([0, 0], [width - 1,height - 1], obstacles, geo.gridpoints,width, height)
     astar.process()
     print astar.grid_path
+    astar.plot_all()
 
-# plot results
-    x, y = zip(*astar.grid_path)
-    plt.plot(x,y, '-gd')
-    plt.show()
+
 
