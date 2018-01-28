@@ -21,7 +21,6 @@ class Node(object):
         self.lat = lat
         self.lon = lon
 
-
 class AStar(object):
     def __init__(self):
         self.open = []
@@ -30,6 +29,7 @@ class AStar(object):
         self.nodes = []
         self.grid_height = None
         self.grid_width = None
+        # todo: use equivalent of function pointers to make the line below cleaner
         self.heuristic_type = 1 # 1 = pythagoras, 2 = manhattan distance
         self.geo_path = []
         self.grid_path = []
@@ -168,21 +168,23 @@ def genObstacles(num_obstacles, width, height, circle = 1):
         obstacles = checkObstacles(obstacles, width, height)
         return tuple(map(tuple, obstacles)) # convert to tuple
 
-def genObstacles2(num_obstacles, circle, geo):
-    if circle:
-        # lat, lon columns of random weight 0:1
-        obs_rand_weights = np.random.rand(num_obstacles, 2)
-        # linearly interpolate based on the random weighting
-        # note: this will probably break in other hemispheres due to signs assumed in interpolation
-        obs = ([np.min([geo.sw_lat,geo.ne_lat]),np.min([geo.sw_lon,geo.ne_lon])] + [np.abs(geo.sw_lat - geo.ne_lat),np.abs(geo.sw_lon - geo.ne_lon)] * obs_rand_weights)
-        indices = geo.getClosestPoint(obs)
+def genObstacles2(num_obstacles, geo, radius):
+    # Generate obstacles via coordinate location (as we'll receive from interop"
+    obs_rand_weights = np.random.rand(num_obstacles, 2) # generate random weights for lat, lon. Multiply flight range by these weights to get the random locations
 
-    # START HERE Richard: at the point where we randomly generate centre positions.
-    # Now feed those to circle generator and return the full list of pts that comprise the obstacles
-    # also reduce the lat,lon range by x% so we have fewer cut off obstacles
+    # linearly interpolate based on the random weighting
+    # note: this will probably break in other hemispheres due to signs assumed in interpolation
+    obstacle_centre_coords = ([np.min([geo.sw_lat,geo.ne_lat]),np.min([geo.sw_lon,geo.ne_lon])] + [np.abs(geo.sw_lat - geo.ne_lat),np.abs(geo.sw_lon - geo.ne_lon)] * obs_rand_weights)
+    indices = geo.getClosestPoint(obstacle_centre_coords) # get the closest location gridpoints row
+    obs_points = np.zeros([1, 2]) #using empty was placing a coord pair in the first row -- internal issue? Makes no sense
 
-    # else:
-    print obs_rand_weights
+    for row in indices:
+        obs_points = np.vstack((obs_points, gencircle(radius, row[0], row[1]))) # pass the xy since that's how circles are generated
+
+    obs_points = obs_points[1:, :] # Remove 0th row since it's zeros
+    return tuple(map(tuple, obs_points))  # convert to tuple
+
+# also reduce the lat,lon range by x% so we have fewer cut off obstacles
 
 
 def checkObstacles(obstacles, width, height):
@@ -204,18 +206,17 @@ if __name__ == '__main__':
     num_obstacles = 5 # With very rectangular grids, many obstacles will be out of range so you'll get fewer than this
     circular_obstacles = True # False: randomly placed point obstacles
 
-    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],2) # flight bounds, spatial resolution
+    geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],2) # flight bounds (SW, NE), spatial resolution
 
 
     # testing
-    genObstacles2(num_obstacles, 1, geo)
-
+    obstacles = genObstacles2(5, geo, 10)
 
     print geo.width, geo.height
     width = geo.width
     height = geo.height
 
-    obstacles = genObstacles(num_obstacles, width, height, circular_obstacles)
+    # obstacles = genObstacles(num_obstacles, width, height, circular_obstacles)
 
 # plot the obstacles
     xobs, yobs = zip(*obstacles)

@@ -23,6 +23,8 @@ from math import sqrt
 import scipy.spatial
 
 class GeoCoords(object):
+    # generates a grid of points within a rectangle defined by a pair of coordinates
+    # also creates a KD tree so that the we can find the nearest location to a specified point
     def __init__(self,sw_in, ne_in, stepsize):
         # based on http://boulter.com/gps/distance/, the input stepsize is twice as large as what this procedure calculates
         # therefore, to actually retrieve the requested resolution, multiply it by 2
@@ -68,7 +70,7 @@ class GeoCoords(object):
         self.width = int(self.gridpoints[-1,0] + 1)
 
         # Create KD tree so that we can query closest grid point to a real location: https: // stackoverflow.com / questions / 36798782 / scipy - ckdtree - nearest - neighbor - including - zeros - distance
-        self.referenceTree = scipy.spatial.cKDTree(self.gridpoints[:,2:4]) # getClosestPoint function
+        self.referenceTree_xy = scipy.spatial.cKDTree(self.gridpoints[:, 2:4]) # getClosestPoint function
 
     def saveCSV(self):
         # this CSV can be directly copied and pasted here: https://www.darrinward.com/lat-long/
@@ -87,7 +89,7 @@ class GeoCoords(object):
 
     def getClosestPoint(self, latlon):
         # you can also call query with a vector of points ... might be useful later
-        dist, index = self.referenceTree.query(latlon)
+        dist, index = self.referenceTree_xy.query(latlon)
         return self.gridpoints[index]
 
 
