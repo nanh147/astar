@@ -1,1 +1,1 @@
-__all__ = ["astar_geo", "geo_coords", "obstacle"]
+__all__ = ["astar_geo", "geo_coords", "obstacle", "gen_circle"]
