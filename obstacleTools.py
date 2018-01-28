@@ -13,7 +13,6 @@ def genObstaclesGeo(geo, obstacles_input):
     obs_points = np.zeros([1, 2]) #using empty was placing a coord pair in the first row -- internal issue? Makes no sense
 
     for row in obstacles_input:
-        print row
         xy_pos = geo.getClosestPoint((row[0], row[1]))
         obs_points = np.vstack((obs_points, gencircle(row[2], xy_pos[0], xy_pos[1]))) # pass the xy since that's how circles are generated
 

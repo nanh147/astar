@@ -1,7 +1,6 @@
 from math import sqrt
 import matplotlib.pyplot as plt
 import heapq
-from gencircle import *
 import numpy as np
 from GeoCoords import *
 from obstacleTools import *
@@ -160,8 +159,8 @@ if __name__ == '__main__':
 
     geo = GeoCoords([49.128397,-122.796805], [49.129779,-122.790330],2) # flight bounds (SW, NE), spatial resolution
 
-    obstacles = genTestObstaclesGeo(5, geo, 10)
-    # obstacles = genObstaclesGeo(geo, [(49.12927299, -122.79221177, 10)])
+    #obstacles = genTestObstaclesGeo(5, geo, 10)
+    obstacles = genObstaclesGeo(geo, [(49.12927299, -122.79221177, 10)])
 
     print geo.width, geo.height
     width = geo.width
@@ -176,13 +175,12 @@ if __name__ == '__main__':
 # run the algorithm
     astar = AStar()
 
-    astar.init_grid3([0,0], [width - 1,height - 1], obstacles, geo.gridpoints,width, height)
-
+    astar.init_grid3([0, 0], [width - 1,height - 1], obstacles, geo.gridpoints,width, height)
     astar.process()
+    print astar.grid_path
 
 # plot results
     x, y = zip(*astar.grid_path)
     plt.plot(x,y, '-gd')
     plt.show()
-
 
