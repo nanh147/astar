@@ -21,10 +21,12 @@ import numpy as np
 import dronekit as dk
 from math import sqrt
 import scipy.spatial
+from numba import jit
 
 class GeoCoords(object):
     # generates a grid of points within a rectangle defined by a pair of coordinates
     # also creates a KD tree so that the we can find the nearest location to a specified point
+    @jit(parallel=True)
     def __init__(self,sw_in, ne_in, stepsize):
         # based on http://boulter.com/gps/distance/, the input stepsize is twice as large as what this procedure calculates
         # therefore, to actually retrieve the requested resolution, multiply it by 2
